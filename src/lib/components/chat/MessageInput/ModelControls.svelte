@@ -15,7 +15,7 @@
 	import Check from '$lib/components/icons/Check.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Knobs from '$lib/components/icons/Knobs.svelte';
-	import { localizeModelControls, resolveLocalizedModelName } from '$lib/utils/localizedContent';
+	import { localizeModelControls, modelControlsOf, resolveLocalizedModelName } from '$lib/utils/localizedContent';
 
 	const i18n: any = getContext('i18n');
 	export let selectedModels: string[] = [];
@@ -45,7 +45,7 @@
 				!!model &&
 				!('direct' in model && model.direct) &&
 				!('pipe' in model && model.pipe) &&
-				Object.keys(model.info?.params?.model_controls ?? {}).length > 0
+				Object.keys(modelControlsOf(model)).length > 0
 		);
 	$: rowClass = `focus-ring flex h-[1.6875rem] w-full cursor-pointer select-none items-center gap-2 rounded-xl px-2 text-left text-[0.8125rem] font-normal text-gray-700 outline-hidden transition-colors duration-75 dark:text-gray-100 ${$settings?.highContrastMode ? 'hover:bg-gray-200! dark:hover:bg-gray-800!' : 'hover:bg-gray-50/40! dark:hover:bg-gray-800/40!'}`;
 	$: selectedClass = $settings?.highContrastMode

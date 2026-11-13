@@ -15,11 +15,12 @@ from open_webui.models.access_grants import AccessGrants
 from open_webui.models.config import Config
 from open_webui.models.functions import Functions
 from open_webui.models.groups import Groups
-from open_webui.models.models import Models
+from open_webui.models.models import ModelControl, Models
 from open_webui.models.users import UserModel
 from open_webui.routers import ollama, openai
 from open_webui.socket.utils import RedisDict
 from open_webui.utils.access_control import has_access, has_base_model_access
+from open_webui.utils.agents.discovery import model_controls as declared_model_controls
 from open_webui.utils.chat_variables import get_chat_variables_schema
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.plugin import (
@@ -55,6 +56,30 @@ def public_model_params(params):
     if 'compact_token_threshold' in params:
         public['compact_token_threshold'] = params['compact_token_threshold']
     return public
+
+
+def provider_model_controls(provider_model) -> dict:
+    """Model Controls an OpenAI-compatible provider declares for one entry of its model list.
+
+    The provider uses the fields Open Terminal agents already use (supportedReasoningEfforts,
+    defaultReasoningEffort, serviceTiers, defaultServiceTier), so the controls mean the same
+    thing everywhere. Each control is validated like an admin-defined one; a malformed
+    declaration is ignored. An ordered reasoning scale is shown as a slider.
+    """
+    if not isinstance(provider_model, dict):
+        return {}
+    try:
+        controls = {
+            key: ModelControl(**control).model_dump()
+            for key, control in declared_model_controls(provider_model).items()
+        }
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
+        log.warning('Ignoring malformed model controls declared for %s: %s', provider_model.get('id'), e)
+        return {}
+    effort = controls.get('reasoning_effort')
+    if effort and len(effort['options']) >= 2:
+        effort['display'] = 'slider'
+    return controls
 
 
 async def fetch_ollama_models(request: Request, user: UserModel = None):
@@ -409,6 +434,19 @@ async def get_all_models(request, refresh: bool = False, user: UserModel = None)
                     meta['capabilities'] = {**value, **existing}
                 elif meta.get(key) is None:
                     meta[key] = copy.deepcopy(value)
+
+    # Controls declared by an OpenAI-compatible provider, for base models without
+    # admin-defined ones. Kept beside `info` (never inside it): a model with `info` is
+    # treated as a stored model by the access filter. Clients see labels only, like
+    # admin-defined controls; requests are checked against the provider's declaration.
+    for model in models:
+        if model.get('agent') or model.get('preset') or not isinstance(model.get('openai'), dict):
+            continue
+        if ((model.get('info') or {}).get('params') or {}).get('model_controls'):
+            continue
+        controls = provider_model_controls(model['openai'])
+        if controls:
+            model['provider_model_controls'] = public_model_params({'model_controls': controls})['model_controls']
 
     # Batch-fetch all function valves in one query to avoid N+1 DB hits
     # inside get_action_priority (previously called per action × per model).

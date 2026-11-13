@@ -20,7 +20,8 @@ def model_controls(model):
     ):
         options = {
             option[value_key]: {
-                'label': option.get(label_key) or option[value_key],
+                # A provider may name an option for display; otherwise its value is shown.
+                'label': option.get('label') or option.get(label_key) or option[value_key],
                 'params': {key: option[value_key]},
             }
             for option in model.get(values, [])

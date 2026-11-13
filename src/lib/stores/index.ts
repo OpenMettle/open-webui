@@ -7,7 +7,7 @@ import {
 import { APP_NAME } from '$lib/constants';
 import { type Writable, derived, get, writable } from 'svelte/store';
 import type { CommentTarget } from '$lib/apis/comments';
-import type { ModelConfig } from '$lib/apis';
+import type { ModelConfig, ModelControl } from '$lib/apis';
 import type { Banner } from '$lib/types';
 import type { Socket } from 'socket.io-client';
 import type { AudioQueue, NotificationSoundStyle } from '$lib/utils/audio';
@@ -241,6 +241,8 @@ export interface OpenAIModel extends BaseModel {
 	owned_by: 'openai';
 	external: boolean;
 	source?: string;
+	// Controls the provider declares in its model list, used when no admin-defined ones exist.
+	provider_model_controls?: Record<string, ModelControl>;
 }
 
 export interface OllamaModel extends BaseModel {

@@ -133,11 +133,18 @@ export const modelControlTranslationSource = (
 	return strings;
 };
 
+// Admin-defined controls win; otherwise the controls the model's OpenAI-compatible provider
+// declares (the server sends them beside `info`, labels only).
+export const modelControlsOf = (model: any): Record<string, ModelControl> => {
+	const defined = model?.info?.params?.model_controls ?? {};
+	return Object.keys(defined).length > 0 ? defined : (model?.provider_model_controls ?? {});
+};
+
 export const localizeModelControls = (model: any, locale: string): Record<string, ModelControl> => {
 	const translate = (value: string | undefined, key: string) =>
 		resolveLocalizedString(value, model?.info?.meta?.i18n, locale, `model_controls.${key}`);
 	return Object.fromEntries(
-		Object.entries<ModelControl>(model?.info?.params?.model_controls ?? {}).map(
+		Object.entries<ModelControl>(modelControlsOf(model)).map(
 			([key, control]) => [
 				key,
 				{

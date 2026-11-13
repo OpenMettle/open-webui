@@ -267,6 +267,7 @@ from open_webui.utils.models import (
     get_all_base_models,
     get_all_models,
     get_filtered_models,
+    provider_model_controls,
 )
 from open_webui.utils.payload import apply_model_controls
 from open_webui.utils.oauth import (
@@ -1674,6 +1675,9 @@ async def chat_completion(
                     controls = target.params.model_dump().get('model_controls', {}) if target else {}
                     if model.get('agent'):
                         controls = model.get('info', {}).get('params', {}).get('model_controls', {})
+                    elif not controls and isinstance(model.get('openai'), dict):
+                        # Admin-defined controls win; otherwise the provider's declaration.
+                        controls = provider_model_controls(model['openai'])
                     form_data['params'] = apply_model_controls(
                         copy.deepcopy(form_data.get('params') or {}),
                         controls,
