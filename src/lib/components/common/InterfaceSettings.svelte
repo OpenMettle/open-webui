@@ -76,6 +76,7 @@
 	let largeTextAsFile = false;
 
 	let insertSuggestionPrompt = false;
+	let showContextWheel = true;
 	let keepFollowUpPrompts = false;
 	let insertFollowUpPrompt = false;
 
@@ -360,6 +361,7 @@
 		promptAutocomplete = currentSettings?.promptAutocomplete ?? false;
 
 		insertSuggestionPrompt = currentSettings?.insertSuggestionPrompt ?? false;
+		showContextWheel = currentSettings?.showContextWheel ?? true;
 		keepFollowUpPrompts = currentSettings?.keepFollowUpPrompts ?? false;
 		insertFollowUpPrompt = currentSettings?.insertFollowUpPrompt ?? false;
 
@@ -1323,6 +1325,33 @@
 		</div>
 		<p class={settingDescriptionClass}>
 			{$i18n.t('settings.personal.interface.insertSuggestionPromptToInput.description')}
+		</p>
+	</div>
+
+	<div>
+		<div class={settingRowClass}>
+			<label
+				id="show-context-wheel-label"
+				class={settingLabelClass}
+				for="show-context-wheel-label-control"
+			>
+				{$i18n.t('settings.personal.interface.showContextWheel.label')}
+			</label>
+
+			<div class={settingControlClass}>
+				<Switch
+					ariaLabelledbyId="show-context-wheel-label"
+					tooltip={true}
+					bind:state={showContextWheel}
+					inherited={isDefaultSetting('showContextWheel')}
+					on:change={() => {
+						saveSettings({ showContextWheel });
+					}}
+				/>
+			</div>
+		</div>
+		<p class={settingDescriptionClass}>
+			{$i18n.t('settings.personal.interface.showContextWheel.description')}
 		</p>
 	</div>
 

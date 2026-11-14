@@ -3,7 +3,10 @@
 	import {
 		estimateTokens,
 		estimateMessagesTokens,
-		estimateUsageGrowth
+		estimateUsageGrowth,
+		getContextCapacity,
+		getContextWheel,
+		getMeasuredContextTokens
 	} from '$lib/utils/contextUsage';
 	import { resolveLocalizedFunction } from '$lib/utils/localizedContent';
 	import { functions as localizedFunctions } from '$lib/stores';
@@ -93,6 +96,7 @@
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
 	import ModelSelector from './ModelSelector.svelte';
 	import ModelControls from './MessageInput/ModelControls.svelte';
+	import ContextWheel from './MessageInput/ContextWheel.svelte';
 
 	import ToolServersModal from './ToolServersModal.svelte';
 	import SkillsModal from './SkillsModal.svelte';
@@ -636,6 +640,22 @@
 			: `${contextTokens} ${$i18n.t('tokens')}`
 		: $i18n.t('unknown');
 	$: contextBarPercent = contextHasThreshold ? Math.min(contextPercent, 100) : 0;
+
+	// Context wheel: the last measured reply against what the selected model can hold (the
+	// smallest capacity when several are selected). Reads loaded state only: no request.
+	$: wheelCapacity =
+		($settings?.showContextWheel ?? true)
+			? selectedModelIds
+					.map((id) => getContextCapacity(id, $models))
+					.filter((capacity): capacity is number => capacity !== null)
+					.reduce((least, capacity) => Math.min(least, capacity), Infinity)
+			: Infinity;
+	$: measuredContextTokens = Number.isFinite(wheelCapacity)
+		? getMeasuredContextTokens(history, getUsageTokenCount)
+		: null;
+	$: contextWheel = Number.isFinite(wheelCapacity)
+		? getContextWheel(measuredContextTokens, wheelCapacity)
+		: null;
 
 	const getCommand = () => {
 		const chatInput = document.getElementById(inputId);
@@ -2956,6 +2976,15 @@
 										bind:params
 										{onParamChange}
 									/>
+
+									{#if contextWheel}
+										<ContextWheel
+											wheel={contextWheel}
+											measured={measuredContextTokens !== null}
+											suggestNewChat={!contextCompactionEnabled}
+											onClick={showStatus}
+										/>
+									{/if}
 
 									{#if isActive && (history.messages[history.currentId]?.user_id ?? $_user?.id) === $_user?.id && prompt === '' && files.length === 0}
 										<div class=" flex items-center">
