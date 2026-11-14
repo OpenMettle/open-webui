@@ -103,6 +103,32 @@ async def has_permission(
     return get_permission(default_permissions, permission_hierarchy)
 
 
+async def requires_web_search_confirmation(
+    user: Any,
+    enabled: bool,
+    default_permissions: dict[str, Any] | None = None,
+    db: AsyncSession | None = None,
+) -> bool:
+    """
+    Whether this user is asked to confirm before a web search.
+
+    The admin setting (`web.search.confirmation.enable`) turns the confirmation on for
+    everyone. The `features.web_search_without_confirmation` permission, granted by any of
+    the user's groups or by the default permissions, exempts a user; admins are exempt like
+    they are from every feature permission. The permission is off by default, so nothing
+    changes for a user until a group grants it.
+    """
+    if not enabled:
+        return False
+    if user is None:
+        return True
+    if user.role == 'admin':
+        return False
+    return not await has_permission(
+        user.id, 'features.web_search_without_confirmation', default_permissions or {}, db=db
+    )
+
+
 async def has_access(
     user_id: str,
     permission: str = 'read',

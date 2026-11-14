@@ -1120,6 +1120,25 @@
 					</div>
 				{/if}
 			</div>
+
+			<div class="flex flex-col w-full">
+				<div class="flex w-full justify-between my-1">
+					<div class=" self-center text-xs font-normal">
+						{$i18n.t('Web Search Without Confirmation')}
+					</div>
+					<Switch
+						bind:state={permissions.features.web_search_without_confirmation}
+						ariaLabel={$i18n.t('Web Search Without Confirmation')}
+					/>
+				</div>
+				{#if defaultPermissions?.features?.web_search_without_confirmation && !permissions.features.web_search_without_confirmation}
+					<div>
+						<div class="text-xs text-gray-500">
+							{$i18n.t('This is a default user permission and will remain enabled.')}
+						</div>
+					</div>
+				{/if}
+			</div>
 		{/if}
 
 		{#if $config?.features?.enable_image_generation}

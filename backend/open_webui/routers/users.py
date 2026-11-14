@@ -262,6 +262,7 @@ class FeaturesPermissions(BaseModel):
     direct_tool_servers: bool = False
 
     web_search: bool = True
+    web_search_without_confirmation: bool = False
     image_generation: bool = True
     code_interpreter: bool = True
     memories: bool = True

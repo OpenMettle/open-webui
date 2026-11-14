@@ -1962,6 +1962,12 @@ USER_PERMISSIONS_FEATURES_ENCRYPTED_CHANNELS = (
 
 USER_PERMISSIONS_FEATURES_API_KEYS = os.getenv('USER_PERMISSIONS_FEATURES_API_KEYS', 'False').lower() == 'true'
 
+# Granted through a group (or as a default), this lets a user search the web without the
+# confirmation dialog that ENABLE_WEB_SEARCH_CONFIRMATION otherwise shows to everyone.
+USER_PERMISSIONS_FEATURES_WEB_SEARCH_WITHOUT_CONFIRMATION = (
+    os.getenv('USER_PERMISSIONS_FEATURES_WEB_SEARCH_WITHOUT_CONFIRMATION', 'False').lower() == 'true'
+)
+
 USER_PERMISSIONS_FEATURES_MEMORIES = os.getenv('USER_PERMISSIONS_FEATURES_MEMORIES', 'True').lower() == 'true'
 
 USER_PERMISSIONS_FEATURES_AUTOMATIONS = os.getenv('USER_PERMISSIONS_FEATURES_AUTOMATIONS', 'False').lower() == 'true'
@@ -2049,6 +2055,7 @@ DEFAULT_USER_PERMISSIONS = {
         'direct_tool_servers': USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS,
         # Chat features
         'web_search': USER_PERMISSIONS_FEATURES_WEB_SEARCH,
+        'web_search_without_confirmation': USER_PERMISSIONS_FEATURES_WEB_SEARCH_WITHOUT_CONFIRMATION,
         'image_generation': USER_PERMISSIONS_FEATURES_IMAGE_GENERATION,
         'code_interpreter': USER_PERMISSIONS_FEATURES_CODE_INTERPRETER,
         'memories': USER_PERMISSIONS_FEATURES_MEMORIES,

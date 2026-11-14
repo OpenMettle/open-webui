@@ -218,7 +218,7 @@ from open_webui.tasks import (
     stop_task,
 )  # Import from tasks.py
 from open_webui.utils import logger
-from open_webui.utils.access_control import has_permission
+from open_webui.utils.access_control import has_permission, requires_web_search_confirmation
 from open_webui.utils.access_control.folders import has_folder_write_access
 from open_webui.utils.actions import chat_action as chat_action_handler
 from open_webui.utils.asgi_middleware import AppHTTPMiddleware, BrowserCORSMiddleware
@@ -2531,7 +2531,10 @@ async def get_app_config(request: Request):
                         config.get('chat.tool_permissions.enable') and config.get('chat.tool_permissions.auto.enable')
                     ),
                     'enable_web_search': config.get('web.search.enable'),
-                    'enable_web_search_confirmation': config.get('web.search.confirmation.enable'),
+                    # Resolved for this user: a group can lift the confirmation for its members.
+                    'enable_web_search_confirmation': await requires_web_search_confirmation(
+                        user, config.get('web.search.confirmation.enable'), config.get('user.permissions')
+                    ),
                     'web_search_confirmation_content': config.get('web.search.confirmation.content'),
                     'enable_code_execution': config.get('code_execution.enable'),
                     'enable_code_interpreter': config.get('code_interpreter.enable'),
