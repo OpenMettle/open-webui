@@ -117,6 +117,11 @@
 			(key) => $i18n.t(key)
 		);
 
+	// OpenMettle welcome: hide the lone model's avatar when it is only the default icon.
+	$: welcomeShowsAvatar =
+		models.length === 1 &&
+		['', '/static/favicon.png'].includes(models[0]?.info?.meta?.profile_image_url ?? '');
+
 	// True when viewing a shared folder the current user doesn't own AND lacks write access
 	$: folderReadOnly =
 		$selectedFolder != null &&
@@ -157,7 +162,9 @@
 				/>
 			{:else}
 				<div class="flex flex-row justify-center gap-2.5 @sm:gap-3 w-fit px-5 max-w-xl">
-					<div class="flex shrink-0 justify-center">
+					<!-- OpenMettle: with one model wearing the default icon, the welcome above already shows
+					     that mark large; a second, small copy beside the name would compete with it. -->
+					<div class="flex shrink-0 justify-center" class:hidden={welcomeShowsAvatar}>
 						<div class="flex -space-x-4 mb-0.5" in:fade={{ duration: 100 }}>
 							{#each models as model, modelIdx}
 								<Tooltip

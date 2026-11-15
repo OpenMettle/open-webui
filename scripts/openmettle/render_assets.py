@@ -26,48 +26,58 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def welcome(source: Image.Image, target: Path) -> None:
-    # 224 px is twice the 112 px the welcome shows. Lossless, so transparency and edges are kept.
-    source.resize((224, 224), Image.LANCZOS).save(target, lossless=True, quality=100, method=6)
+def head(source: Image.Image, margin: float) -> Image.Image:
+    """Mettle's head cropped to the artwork (alpha above 24/255), centred on a transparent square.
+
+    The original has about 27% empty space around the head; at 16-96 px that space is what makes
+    the mark unreadable, so every output starts from this crop and adds back only `margin`.
+    """
+    box = source.getchannel('A').point(lambda a: 255 if a > 24 else 0).getbbox()
+    art = source.crop(box)
+    side = round(max(art.size) * (1 + 2 * margin))
+    square = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+    square.alpha_composite(art, ((side - art.width) // 2, (side - art.height) // 2))
+    return square
 
 
-def square(size: int):
-    """The head mark on its ivory square, as Open WebUI's favicon and touch icon are full tiles."""
+def transparent(size: int, margin: float = 0.03):
+    """The head alone: browser tabs, the splash and the welcome. Its ivory rim and red tab keep it
+    visible on light and dark surfaces."""
 
     def render(source: Image.Image, target: Path) -> None:
-        source.convert('RGB').resize((size, size), Image.LANCZOS).save(target, optimize=True)
+        image = head(source, margin).resize((size, size), Image.LANCZOS)
+        if target.suffix == '.webp':
+            image.save(target, lossless=True, quality=100, method=6)
+        else:
+            image.save(target, optimize=True)
 
     return render
 
 
-def padded(size: int):
-    """Mettle on ivory inside the central 72%, so a maskable icon's circle crop keeps him whole."""
+def tile(size: int, scale: float):
+    """The head on a warm ivory tile (#F2EBDD). Solid, so it reads on light and dark surfaces alike;
+    ivory rather than white so it does not glare in dark mode. `scale` is the head's share of the
+    tile: 0.78 stays inside the inscribed circle that avatars and the sidebar crop to, 0.62 inside the
+    80% safe zone of maskable install icons."""
 
     def render(source: Image.Image, target: Path) -> None:
-        tile = Image.new('RGBA', (size, size), IVORY)
-        inner = round(size * 0.72)
-        offset = (size - inner) // 2
-        tile.alpha_composite(source.resize((inner, inner), Image.LANCZOS), (offset, offset))
-        tile.convert('RGB').save(target, optimize=True)
-
-    return render
-
-
-def transparent(size: int):
-    def render(source: Image.Image, target: Path) -> None:
-        source.resize((size, size), Image.LANCZOS).save(target, optimize=True)
+        canvas = Image.new('RGBA', (size, size), IVORY)
+        mark = head(source, 0).resize((round(size * scale),) * 2, Image.LANCZOS)
+        offset = (size - mark.width) // 2
+        canvas.alpha_composite(mark, (offset, offset))
+        canvas.convert('RGB').save(target, optimize=True)
 
     return render
 
 
 def ico(source: Image.Image, target: Path) -> None:
-    source.convert('RGB').save(target, sizes=[(16, 16), (32, 32), (48, 48)])
+    head(source, 0.03).save(target, sizes=[(16, 16), (32, 32), (48, 48)])
 
 
 def svg(source: Image.Image, target: Path) -> None:
-    # No vector master exists (brand README), so the SVG icon wraps a 128 px PNG.
+    # No vector master exists (brand README), so the SVG icon wraps a 128 px PNG of the head.
     png = io.BytesIO()
-    source.convert('RGB').resize((128, 128), Image.LANCZOS).save(png, format='PNG', optimize=True)
+    head(source, 0.03).resize((128, 128), Image.LANCZOS).save(png, format='PNG', optimize=True)
     data = base64.b64encode(png.getvalue()).decode()
     target.write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
@@ -78,23 +88,22 @@ def svg(source: Image.Image, target: Path) -> None:
 
 IVORY = (0xF2, 0xEB, 0xDD, 255)
 TRANSPARENT_AVATAR = 'assets/brand/current/openmettle-avatar-transparent.png'
-IVORY_AVATAR = 'assets/brand/current/openmettle-avatar.png'
 
-# Brand files keep Open WebUI's names; the branding switch copies them over the stock ones. The icon
-# and splash are 256 px rather than 512 px: shown at 96 px at most, they stay sharp at 2x and are a
-# quarter of the bytes. Manifest icons keep the sizes the manifests declare.
+# Brand files keep Open WebUI's names; the branding switch copies them over the stock ones. Small
+# marks (tab icons, 16-96 px) use the tight head crop; the welcome and splash keep more space around
+# the head. Manifest icons keep the sizes the manifests declare.
 RENDERERS = {
-    'mettle.webp': (TRANSPARENT_AVATAR, welcome),
-    'brand/favicon.png': (IVORY_AVATAR, square(256)),
-    'brand/favicon-96x96.png': (IVORY_AVATAR, square(96)),
-    'brand/favicon.ico': (IVORY_AVATAR, ico),
-    'brand/favicon.svg': (IVORY_AVATAR, svg),
-    'brand/apple-touch-icon.png': (IVORY_AVATAR, square(180)),
-    'brand/web-app-manifest-192x192.png': (TRANSPARENT_AVATAR, padded(192)),
-    'brand/web-app-manifest-512x512.png': (TRANSPARENT_AVATAR, padded(512)),
-    'brand/logo.png': (TRANSPARENT_AVATAR, padded(500)),
-    'brand/splash.png': (TRANSPARENT_AVATAR, transparent(256)),
-    'brand/splash-dark.png': (TRANSPARENT_AVATAR, transparent(256)),
+    'mettle.webp': (TRANSPARENT_AVATAR, transparent(256, margin=0.04)),
+    'brand/favicon.png': (TRANSPARENT_AVATAR, tile(256, 0.78)),
+    'brand/favicon-96x96.png': (TRANSPARENT_AVATAR, transparent(96)),
+    'brand/favicon.ico': (TRANSPARENT_AVATAR, ico),
+    'brand/favicon.svg': (TRANSPARENT_AVATAR, svg),
+    'brand/apple-touch-icon.png': (TRANSPARENT_AVATAR, tile(180, 0.78)),
+    'brand/web-app-manifest-192x192.png': (TRANSPARENT_AVATAR, tile(192, 0.62)),
+    'brand/web-app-manifest-512x512.png': (TRANSPARENT_AVATAR, tile(512, 0.62)),
+    'brand/logo.png': (TRANSPARENT_AVATAR, tile(500, 0.62)),
+    'brand/splash.png': (TRANSPARENT_AVATAR, transparent(256, margin=0.08)),
+    'brand/splash-dark.png': (TRANSPARENT_AVATAR, transparent(256, margin=0.08)),
 }
 
 
@@ -118,7 +127,10 @@ def main(brand_repo: Path) -> None:
                 size = f'{rendered.width}x{rendered.height}'
         outputs.append({'file': name, 'source': source_path, 'size': size, 'sha256': sha256(target)})
     provenance['outputs'] = outputs
-    provenance['tool'] = f'scripts/openmettle/render_assets.py, Pillow {PIL.__version__}, Lanczos resampling'
+    provenance['tool'] = (
+        f'scripts/openmettle/render_assets.py, Pillow {PIL.__version__}, Lanczos resampling; '
+        'cropped to the artwork (alpha > 24) before resizing'
+    )
     PROVENANCE.write_text(json.dumps(provenance, indent='\t') + '\n')
 
 

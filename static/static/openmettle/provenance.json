@@ -8,82 +8,76 @@
 			"size": "1254x1254",
 			"bytes": 689924,
 			"sha256": "3e5d7d68152c1b525af3139bb4be8fdbe958c16437564d476c84fc403176df55"
-		},
-		{
-			"path": "assets/brand/current/openmettle-avatar.png",
-			"size": "1254x1254",
-			"bytes": 1531654,
-			"sha256": "b40202c88dd5e9ecf63d6aae7e1bc2c1ba65975c0e251a98c5e1eb913cf68521"
 		}
 	],
-	"modifications": "Resized from the originals listed in sources; the originals are not shipped. Regenerate with scripts/openmettle/render_assets.py.",
+	"modifications": "Cropped to the artwork and resized from the original listed in sources; small icons placed on an ivory (#F2EBDD) tile. The original is not shipped. Regenerate with scripts/openmettle/render_assets.py.",
 	"outputs": [
 		{
 			"file": "mettle.webp",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
-			"size": "224x224",
-			"sha256": "7e70b4fcbe89866f44a74309069bd24be190cc4c693c31bdd83aabd4149af92a"
+			"size": "256x256",
+			"sha256": "5a15d4a22c787b9eaa59b6a1943686596fa431738e275b2f9d570c9630bcd2ac"
 		},
 		{
 			"file": "brand/favicon.png",
-			"source": "assets/brand/current/openmettle-avatar.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "256x256",
-			"sha256": "825af4ab09634b8da0fe12f507022ce99f44998a8d3ac1256e7e1853343748c1"
+			"sha256": "10bbdec3e78ee52935539ef806aa3979657a2f65cdcaed094b4ea6679d48ff6a"
 		},
 		{
 			"file": "brand/favicon-96x96.png",
-			"source": "assets/brand/current/openmettle-avatar.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "96x96",
-			"sha256": "6be6b5bc76787b88e581ea05be8d43f7517e65fda7f476e5ec0dae81942cb81b"
+			"sha256": "6b298c975e138e7adbeb82f8c20e0b8ab1bfb9f34af48fd43b38239fa3c4a52d"
 		},
 		{
 			"file": "brand/favicon.ico",
-			"source": "assets/brand/current/openmettle-avatar.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "16x16, 32x32, 48x48",
-			"sha256": "8597e394e7b762c82abc6071ce56084ad6fe9b1d48354a060d6401d33cb63f21"
+			"sha256": "053da75830e78e8a95acae69b0662dc73dcca8c92b01fb7bf9a7eab09c4f9287"
 		},
 		{
 			"file": "brand/favicon.svg",
-			"source": "assets/brand/current/openmettle-avatar.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "128x128 PNG in SVG",
-			"sha256": "40c08183aeacab463ee0f11a7bbc853ac9ce67235437d078bb0c69fd4db26378"
+			"sha256": "29bdf0c5b7c4925bfa8081f138eed231d539a4d75c14d24e622a4e21e7eb07c7"
 		},
 		{
 			"file": "brand/apple-touch-icon.png",
-			"source": "assets/brand/current/openmettle-avatar.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "180x180",
-			"sha256": "7aba54695924c672541d1adbb6611329f5846b6fcfee9e0a300228e22eda8076"
+			"sha256": "ac13fa06265f9552b52b77cb5016626aeff2777ec21bce3d2791c3dc23f9a4bd"
 		},
 		{
 			"file": "brand/web-app-manifest-192x192.png",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "192x192",
-			"sha256": "7f4ac30a00f566b9e1efb69c3bc2e5029e1181480e4630cc117868a8fa6ec3f1"
+			"sha256": "4f5cf0d952146296fb64a6451fea666d9808a966f8e2854279ab80b2474cae75"
 		},
 		{
 			"file": "brand/web-app-manifest-512x512.png",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "512x512",
-			"sha256": "31e6067c224837fdbf4ea9ff76318ad2c9a0f213a5792deb023b6f769d6ca1a2"
+			"sha256": "8c13fdbfe58c91f775f31c3ebcfbfe3708d11f2ad4fab0bdb959b52b25ec2591"
 		},
 		{
 			"file": "brand/logo.png",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "500x500",
-			"sha256": "68f822115b42be3f4e085f358bad83b2f1c8f0d2ef46ebbae52550ad50f0759e"
+			"sha256": "206fe5f5536ca409678d61a4a39820cc23636a83422453f460a6952164316c9c"
 		},
 		{
 			"file": "brand/splash.png",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "256x256",
-			"sha256": "94fc452ea8dc4672f8f74cedfcc863404c8db470f8c0298c423adf43ef0ab0a8"
+			"sha256": "711bba27f202c0d2b35cd877e27b712fcd25bbce116360267a92a38f7e767290"
 		},
 		{
 			"file": "brand/splash-dark.png",
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "256x256",
-			"sha256": "94fc452ea8dc4672f8f74cedfcc863404c8db470f8c0298c423adf43ef0ab0a8"
+			"sha256": "711bba27f202c0d2b35cd877e27b712fcd25bbce116360267a92a38f7e767290"
 		}
 	],
-	"tool": "scripts/openmettle/render_assets.py, Pillow 12.3.0, Lanczos resampling"
+	"tool": "scripts/openmettle/render_assets.py, Pillow 12.3.0, Lanczos resampling; cropped to the artwork (alpha > 24) before resizing"
 }
