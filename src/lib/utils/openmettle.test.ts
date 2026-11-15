@@ -8,6 +8,7 @@ import {
 	rebrandText,
 	setOpenMettleBranding,
 	shortBuildHash,
+	showsReplyHeader,
 	versionLine
 } from './openmettle';
 
@@ -89,5 +90,39 @@ describe('version line', () => {
 			);
 		}
 		expect(versionLine(undefined, 'ab3186b')).toContain('Open WebUI v?');
+	});
+});
+
+describe('reply header', () => {
+	const user = (id: string, models = ['qwen']) => ({ role: 'user', parentId: null, models, id });
+	const reply = (parentId: string, model = 'qwen', extra = {}) => ({
+		role: 'assistant',
+		parentId,
+		model,
+		...extra
+	});
+	const chat = (messages: Record<string, any>) => ({ messages });
+
+	it('always shows it with the switch off, as upstream does', () => {
+		const history = chat({ u1: user('u1'), a1: reply('u1') });
+		expect(showsReplyHeader(false, history, history.messages.a1)).toBe(true);
+		expect(showsReplyHeader(undefined, history, history.messages.a1)).toBe(true);
+	});
+
+	it('hides it when one model answers the whole chat', () => {
+		const history = chat({ u1: user('u1'), a1: reply('u1'), u2: user('u2'), a2: reply('u2') });
+		expect(showsReplyHeader(true, history, history.messages.a2)).toBe(false);
+	});
+
+	it('shows it when the chat has replies from more than one model, on any branch', () => {
+		const history = chat({ u1: user('u1'), a1: reply('u1'), a1b: reply('u1', 'gemma') });
+		expect(showsReplyHeader(true, history, history.messages.a1)).toBe(true);
+	});
+
+	it('shows it for a turn sent to several models and for arena replies', () => {
+		const compare = chat({ u1: user('u1', ['qwen', 'gemma']), a1: reply('u1') });
+		expect(showsReplyHeader(true, compare, compare.messages.a1)).toBe(true);
+		const arena = chat({ u1: user('u1'), a1: reply('u1', 'qwen', { arena: true }) });
+		expect(showsReplyHeader(true, arena, arena.messages.a1)).toBe(true);
 	});
 });

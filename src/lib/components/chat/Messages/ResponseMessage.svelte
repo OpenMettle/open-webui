@@ -51,6 +51,7 @@
 
 	import Name from './Name.svelte';
 	import ProfileImage from './ProfileImage.svelte';
+	import { showsReplyHeader } from '$lib/utils/openmettle';
 	import Image from '$lib/components/common/Image.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import RateComment from './RateComment.svelte';
@@ -206,6 +207,8 @@
 		? resolveLocalizedModelName(model, $i18n.language)
 		: message.modelName || message.model;
 	$: model = $models.find((m) => m.id === message.model);
+	// OpenMettle: a chat answered by one model shows replies as plain text (no avatar or name).
+	$: replyHeader = showsReplyHeader($config?.openmettle?.branding, history, message);
 	$: responseTimestamp = message?.meta?.response_ended_at ?? message?.timestamp;
 
 	$: statusEntries = message?.statusHistory ?? [...(message?.status ? [message?.status] : [])];
@@ -712,15 +715,17 @@
 		dir={$settings.chatDirection}
 		style="scroll-margin-top: 3rem;"
 	>
-		<div class={`shrink-0 ltr:mr-2 rtl:ml-2 hidden @lg:flex mt-0.5 `}>
-			<ProfileImage
-				src={`${WEBUI_API_BASE_URL}/models/model/profile/image?id=${model?.id ?? message.model}&lang=${$i18n.language}`}
-				className={'size-7 assistant-message-profile-image'}
-			/>
-		</div>
+		{#if replyHeader}
+			<div class={`shrink-0 ltr:mr-2 rtl:ml-2 hidden @lg:flex mt-0.5 `}>
+				<ProfileImage
+					src={`${WEBUI_API_BASE_URL}/models/model/profile/image?id=${model?.id ?? message.model}&lang=${$i18n.language}`}
+					className={'size-7 assistant-message-profile-image'}
+				/>
+			</div>
+		{/if}
 
 		<div class="flex-auto w-0 pl-1 relative">
-			{#if !compactPreview}
+			{#if !compactPreview && replyHeader}
 				<Name>
 					<Tooltip content={localizedModelName} placement="top-start">
 						<span id="response-message-model-name" class="line-clamp-1 text-black dark:text-white">
@@ -728,6 +733,9 @@
 						</span>
 					</Tooltip>
 				</Name>
+			{:else if !compactPreview}
+				<!-- The name is hidden, not gone: screen readers still hear who replied. -->
+				<h3 class="sr-only">{localizedModelName}</h3>
 			{/if}
 
 			{#if message.contextSummary && !compactionStatus}
@@ -1697,7 +1705,9 @@
 									{#if responseTimestamp}
 										<Tooltip
 											className="flex self-center"
-											content={formatMessageTimestampFull(responseTimestamp * 1000, $i18n.language)}
+											content={replyHeader
+												? formatMessageTimestampFull(responseTimestamp * 1000, $i18n.language)
+												: `${localizedModelName} · ${formatMessageTimestampFull(responseTimestamp * 1000, $i18n.language)}`}
 											placement="bottom"
 										>
 											<time

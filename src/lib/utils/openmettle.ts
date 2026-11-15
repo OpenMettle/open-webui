@@ -70,3 +70,34 @@ export const versionLine = (
 		`${UPSTREAM_NAME} v${upstreamVersion || '?'}`,
 		shortBuildHash(buildHash) || noBuild
 	].join(' · ');
+
+type ReplyMessage = {
+	role?: string;
+	model?: string;
+	parentId?: string | null;
+	models?: string[];
+	arena?: boolean;
+};
+
+/**
+ * Whether an assistant reply shows the model's avatar and name above its text. Open WebUI always
+ * does. With the branding switch on, the name stays only where it tells replies apart: an arena
+ * reply, a turn sent to several models at once, or a chat answered by more than one model on any
+ * branch. Otherwise the reply is just text, as in ChatGPT; the name stays in the timestamp tooltip
+ * and as a heading for screen readers.
+ */
+export const showsReplyHeader = (
+	branding: boolean | undefined,
+	history: { messages?: Record<string, ReplyMessage> } | undefined,
+	message: ReplyMessage | undefined
+) => {
+	if (!branding || !message || message.arena) return true;
+	const messages = history?.messages ?? {};
+	const parent = message.parentId ? messages[message.parentId] : undefined;
+	if ((parent?.models?.length ?? 1) > 1) return true;
+	const repliedBy = new Set<string>();
+	for (const m of Object.values(messages)) {
+		if (m?.role === 'assistant' && m.model) repliedBy.add(m.model);
+	}
+	return repliedBy.size > 1;
+};
