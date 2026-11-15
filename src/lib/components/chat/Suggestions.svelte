@@ -2,7 +2,7 @@
 	import Fuse from 'fuse.js';
 	import Bolt from '$lib/components/icons/Bolt.svelte';
 	import { getContext } from 'svelte';
-	import { settings, WEBUI_NAME } from '$lib/stores';
+	import { config, settings, WEBUI_NAME } from '$lib/stores';
 	import { WEBUI_VERSION } from '$lib/constants';
 
 	const i18n = getContext('i18n');
@@ -77,7 +77,9 @@
 			<!-- LICENSE covers this Open WebUI footer identifier.
 			Do not alter, remove, obscure, or replace it except as LICENSE permits:
 			https://docs.openwebui.com/license. -->
-			{$WEBUI_NAME} ‧ v{WEBUI_VERSION}
+			<!-- OpenMettle branding: the name only; the footer below carries the fork and upstream versions. -->
+			{$WEBUI_NAME}{#if !$config?.openmettle?.branding}
+				‧ v{WEBUI_VERSION}{/if}
 		</div>
 	{/if}
 </div>

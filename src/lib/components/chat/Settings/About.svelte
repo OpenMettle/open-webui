@@ -10,6 +10,8 @@
 	import { onMount, getContext } from 'svelte';
 
 	import BuildVersion from '$lib/components/common/BuildVersion.svelte';
+	import OpenMettleFooter from '$lib/components/OpenMettleFooter.svelte';
+	import { OPENMETTLE_URL } from '$lib/utils/openmettle';
 	import UserSettingRow from './UserSettingRow.svelte';
 	import UserSettingSection from './UserSettingSection.svelte';
 
@@ -141,6 +143,14 @@
 					{$i18n.t('license purchased by')}
 					<span class="capitalize">{$config?.license_metadata?.organization_name}</span>
 				</div>
+			{:else if $config?.openmettle?.branding}
+				<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-600">
+					<a
+						class="hover:text-gray-700 dark:hover:text-gray-400"
+						href={OPENMETTLE_URL}
+						target="_blank">GitHub</a
+					>
+				</div>
 			{:else}
 				<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-600">
 					<a
@@ -168,6 +178,8 @@
 				)}
 				<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY 4.0</a>.
 			</div>
+
+			<OpenMettleFooter className="text-xs" />
 
 			<div class="text-xs text-gray-400 dark:text-gray-500">
 				<!-- LICENSE covers this Open WebUI copyright attribution.

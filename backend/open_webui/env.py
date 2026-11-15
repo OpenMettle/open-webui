@@ -18,6 +18,8 @@ import markdown
 from bs4 import BeautifulSoup
 from cryptography.hazmat.primitives import serialization
 
+from open_webui.utils.openmettle import webui_name
+
 # Load .env file
 
 # Use .resolve() to get the canonical path, removing any '..' or '.' components
@@ -960,9 +962,11 @@ if LICENSE_PUBLIC_KEY:
 # visual, textual, symbolic identifiers, metadata, and surrounding UI.
 # Do not alter, remove, obscure, or replace it except as LICENSE permits:
 # https://docs.openwebui.com/license.
-WEBUI_NAME = os.getenv('WEBUI_NAME', 'Open WebUI')
-if WEBUI_NAME != 'Open WebUI':
-    WEBUI_NAME += ' (Open WebUI)'
+#
+# OpenMettle (a fork of Open WebUI): OPENMETTLE_BRANDING=true puts OpenMettle's name and icons in
+# place of Open WebUI's. Off by default; open_webui/utils/openmettle.py says when the licence allows it.
+OPENMETTLE_BRANDING = os.getenv('OPENMETTLE_BRANDING', 'False').lower() == 'true'
+WEBUI_NAME = webui_name(os.getenv('WEBUI_NAME'), OPENMETTLE_BRANDING)
 
 # LICENSE covers this Open WebUI branding surface, including this favicon
 # and any visual, textual, or symbolic identifiers it preserves.

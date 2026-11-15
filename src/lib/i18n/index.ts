@@ -5,6 +5,7 @@ import type { i18n as i18nType } from 'i18next';
 import { writable } from 'svelte/store';
 import dayjs, { getDayjsLocale } from '$lib/dayjs';
 import type { I18nOverrides } from '$lib/utils/translationDictionary';
+import { openMettlePostProcessor, setOpenMettleBranding } from '$lib/utils/openmettle';
 
 import { assembleSettingsTranslations } from './settings-translations';
 import languages from './locales/languages.json';
@@ -95,8 +96,10 @@ export const initI18n = (defaultLocale?: string, value: I18nOverrides = {}) => {
 	return i18next
 		.use(resourcesToBackend(loadResource))
 		.use(detector)
+		.use(openMettlePostProcessor)
 		.init({
 			debug: false,
+			postProcess: ['openmettle'],
 			detection: {
 				order: ['querystring', 'localStorage', 'defaultLocale', 'navigator'],
 				caches: ['localStorage'],
@@ -120,6 +123,12 @@ export const initI18n = (defaultLocale?: string, value: I18nOverrides = {}) => {
 
 const i18n = createI18nStore(i18next);
 const isLoadingStore = createIsLoadingStore(i18next);
+
+// OpenMettle branding switch, from /api/config: re-renders translated text with the product name.
+export const setBranding = (value: boolean | undefined) => {
+	setOpenMettleBranding(value);
+	i18n.set(i18next);
+};
 
 export const getLanguages = async () => languages;
 // Serialize switches so a slower download cannot overwrite a newer selection.

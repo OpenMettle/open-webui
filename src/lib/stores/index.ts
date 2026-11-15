@@ -413,6 +413,8 @@ type Config = {
 	status: boolean;
 	name: string;
 	version: string;
+	// OpenMettle branding switch (env OPENMETTLE_BRANDING)
+	openmettle?: { branding?: boolean };
 	default_locale: string;
 	i18n?: I18nOverrides;
 	default_models: string;

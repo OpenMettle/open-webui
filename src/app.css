@@ -1271,3 +1271,7 @@ html.high-contrast:not(.dark) .shimmer {
 [data-chat-theme='openmettle'] [role='listitem'] > button:hover {
 	background-color: var(--mettle-surface);
 }
+
+[data-chat-theme='openmettle'] [data-openmettle-footer] {
+	color: var(--mettle-muted);
+}

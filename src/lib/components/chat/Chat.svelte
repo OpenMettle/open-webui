@@ -135,6 +135,7 @@
 
 	import Banner from '../common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
+	import OpenMettleFooter from '$lib/components/OpenMettleFooter.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/chat/Navbar.svelte';
 	import ChatTabs from './ChatTabs.svelte';
@@ -5854,6 +5855,9 @@
 							</div>
 						{/if}
 					</div>
+				{/if}
+				{#if !embedded}
+					<OpenMettleFooter className="shrink-0 truncate px-4 pb-1 text-center" />
 				{/if}
 			</div>
 

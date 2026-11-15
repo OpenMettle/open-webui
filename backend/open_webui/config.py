@@ -27,6 +27,7 @@ from open_webui.env import (
     FRONTEND_BUILD_DIR,
     OFFLINE_MODE,
     OPEN_WEBUI_DIR,
+    OPENMETTLE_BRANDING,
     REDIS_KEY_PREFIX,
     REDIS_SENTINEL_HOSTS,
     REDIS_SENTINEL_PORT,
@@ -38,6 +39,7 @@ from open_webui.env import (
 )
 from open_webui.models.config import Config
 from open_webui.utils.json_codec import JSONCodec
+from open_webui.utils.openmettle import apply_brand_assets
 
 
 async def seed_registered_defaults():
@@ -145,6 +147,12 @@ if frontend_loader.exists():
         shutil.copyfile(frontend_loader, STATIC_DIR / 'loader.js')
     except Exception as e:
         logging.error(f'An error occurred: {e}')
+
+# OpenMettle branding switch (env OPENMETTLE_BRANDING): OpenMettle's icons in place of Open WebUI's,
+# except where the deployment supplied its own file.
+if OPENMETTLE_BRANDING:
+    replaced = apply_brand_assets(STATIC_SOURCE_DIR, STATIC_DIR)
+    log.info(f'OpenMettle branding: replaced {", ".join(replaced) or "nothing"}')
 
 
 # Storage provider

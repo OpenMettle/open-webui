@@ -68,6 +68,7 @@ from open_webui.config import (
     THREAD_POOL_THREAD_NAME_PREFIX,
     WEBUI_AUTH,
     WEBUI_NAME,
+    OPENMETTLE_BRANDING,
     async_reset_config,
     import_legacy_config_json,
     seed_registered_defaults,
@@ -2465,6 +2466,8 @@ async def get_app_config(request: Request):
         'status': True,
         'name': app.state.WEBUI_NAME,
         'version': VERSION,
+        # Public, like the name: the sign-in page shows the product name and icons.
+        'openmettle': {'branding': OPENMETTLE_BRANDING},
         'default_locale': str(DEFAULT_LOCALE),
         'i18n': config.get('ui.i18n') or {},
         'oauth': {
@@ -3261,6 +3264,14 @@ def swagger_ui_html(*args, **kwargs):
 
 
 applications.get_swagger_ui_html = swagger_ui_html
+
+if OPENMETTLE_BRANDING:
+    # The frontend's fallback icon is /favicon.png from the build, outside the static folder the
+    # branding switch updates; serve the static folder's icon there instead.
+    @app.get('/favicon.png', include_in_schema=False)
+    async def get_favicon():
+        return FileResponse(STATIC_DIR / 'favicon.png')
+
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     pyodide_dir = FRONTEND_BUILD_DIR / 'pyodide'

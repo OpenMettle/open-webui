@@ -53,7 +53,7 @@
 	import { beforeNavigate } from '$app/navigation';
 	import { updated } from '$app/state';
 
-	import i18n, { initI18n, getLanguages, changeLanguage } from '$lib/i18n';
+	import i18n, { initI18n, getLanguages, changeLanguage, setBranding } from '$lib/i18n';
 
 	import '../tailwind.css';
 	import '../app.css';
@@ -72,6 +72,7 @@
 	} from '$lib/utils/connections';
 
 	import { COMMUNITY_ORIGINS, WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
+	import { productName } from '$lib/utils/openmettle';
 	import {
 		bestMatchingLanguage,
 		cleanText,
@@ -655,7 +656,7 @@
 			if ($isLastActiveTab) {
 				if ($settings?.notificationEnabled ?? false) {
 					notify(
-						`${data.title} / Open WebUI`,
+						`${data.title} / ${productName($config?.openmettle?.branding)}`,
 						{
 							body: timeStr,
 							// LICENSE covers this Open WebUI notification identifier.
@@ -816,7 +817,7 @@
 					if ($isLastActiveTab) {
 						if ($settings?.notificationEnabled ?? false) {
 							notify(
-								`${displayTitle} / Open WebUI`,
+								`${displayTitle} / ${productName($config?.openmettle?.branding)}`,
 								{
 									body: contentPreview,
 									// LICENSE covers this Open WebUI notification identifier.
@@ -963,7 +964,7 @@
 						// Do not alter, remove, obscure, or replace it except as LICENSE permits:
 						// https://docs.openwebui.com/license.
 						notify(
-							`${title} / Open WebUI`,
+							`${title} / ${productName($config?.openmettle?.branding)}`,
 							{
 								body: content,
 								icon: `${WEBUI_API_BASE_URL}/users/${data?.user?.id}/profile/image`
@@ -1379,6 +1380,7 @@
 			// Do not alter, remove, obscure, or replace it except as LICENSE permits:
 			// https://docs.openwebui.com/license.
 			await WEBUI_NAME.set(backendConfig.name);
+			setBranding(backendConfig?.openmettle?.branding);
 
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);

@@ -8,6 +8,12 @@
 			"size": "1254x1254",
 			"bytes": 689924,
 			"sha256": "3e5d7d68152c1b525af3139bb4be8fdbe958c16437564d476c84fc403176df55"
+		},
+		{
+			"path": "assets/brand/current/openmettle-avatar.png",
+			"size": "1254x1254",
+			"bytes": 1531654,
+			"sha256": "b40202c88dd5e9ecf63d6aae7e1bc2c1ba65975c0e251a98c5e1eb913cf68521"
 		}
 	],
 	"modifications": "Resized from the originals listed in sources; the originals are not shipped. Regenerate with scripts/openmettle/render_assets.py.",
@@ -17,6 +23,66 @@
 			"source": "assets/brand/current/openmettle-avatar-transparent.png",
 			"size": "224x224",
 			"sha256": "7e70b4fcbe89866f44a74309069bd24be190cc4c693c31bdd83aabd4149af92a"
+		},
+		{
+			"file": "brand/favicon.png",
+			"source": "assets/brand/current/openmettle-avatar.png",
+			"size": "256x256",
+			"sha256": "825af4ab09634b8da0fe12f507022ce99f44998a8d3ac1256e7e1853343748c1"
+		},
+		{
+			"file": "brand/favicon-96x96.png",
+			"source": "assets/brand/current/openmettle-avatar.png",
+			"size": "96x96",
+			"sha256": "6be6b5bc76787b88e581ea05be8d43f7517e65fda7f476e5ec0dae81942cb81b"
+		},
+		{
+			"file": "brand/favicon.ico",
+			"source": "assets/brand/current/openmettle-avatar.png",
+			"size": "16x16, 32x32, 48x48",
+			"sha256": "8597e394e7b762c82abc6071ce56084ad6fe9b1d48354a060d6401d33cb63f21"
+		},
+		{
+			"file": "brand/favicon.svg",
+			"source": "assets/brand/current/openmettle-avatar.png",
+			"size": "128x128 PNG in SVG",
+			"sha256": "40c08183aeacab463ee0f11a7bbc853ac9ce67235437d078bb0c69fd4db26378"
+		},
+		{
+			"file": "brand/apple-touch-icon.png",
+			"source": "assets/brand/current/openmettle-avatar.png",
+			"size": "180x180",
+			"sha256": "7aba54695924c672541d1adbb6611329f5846b6fcfee9e0a300228e22eda8076"
+		},
+		{
+			"file": "brand/web-app-manifest-192x192.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "192x192",
+			"sha256": "7f4ac30a00f566b9e1efb69c3bc2e5029e1181480e4630cc117868a8fa6ec3f1"
+		},
+		{
+			"file": "brand/web-app-manifest-512x512.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "512x512",
+			"sha256": "31e6067c224837fdbf4ea9ff76318ad2c9a0f213a5792deb023b6f769d6ca1a2"
+		},
+		{
+			"file": "brand/logo.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "500x500",
+			"sha256": "68f822115b42be3f4e085f358bad83b2f1c8f0d2ef46ebbae52550ad50f0759e"
+		},
+		{
+			"file": "brand/splash.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "256x256",
+			"sha256": "94fc452ea8dc4672f8f74cedfcc863404c8db470f8c0298c423adf43ef0ab0a8"
+		},
+		{
+			"file": "brand/splash-dark.png",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "256x256",
+			"sha256": "94fc452ea8dc4672f8f74cedfcc863404c8db470f8c0298c423adf43ef0ab0a8"
 		}
 	],
 	"tool": "scripts/openmettle/render_assets.py, Pillow 12.3.0, Lanczos resampling"
