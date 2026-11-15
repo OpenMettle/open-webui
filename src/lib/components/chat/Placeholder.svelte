@@ -29,6 +29,7 @@
 	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 
 	import Suggestions from './Suggestions.svelte';
+	import OpenMettleWelcome from './OpenMettleWelcome.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import MessageInput from './MessageInput.svelte';
@@ -124,6 +125,9 @@
 </script>
 
 <div class="m-auto w-full max-w-[58rem] px-1 md:@3xl:px-20 translate-y-6 py-24 text-center">
+	{#if !$selectedFolder}
+		<OpenMettleWelcome />
+	{/if}
 	{#if $temporaryChatEnabled}
 		<Tooltip
 			content={$i18n.t("This chat won't appear in history and your messages will not be saved.")}

@@ -1,0 +1,23 @@
+{
+	"repository": "https://github.com/OpenMettle/.github",
+	"commit": "c643d3553c498a021cdfeff84cac411cf6796bac",
+	"license": "MIT, OpenMettle contributors; see LICENSE in this directory",
+	"sources": [
+		{
+			"path": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "1254x1254",
+			"bytes": 689924,
+			"sha256": "3e5d7d68152c1b525af3139bb4be8fdbe958c16437564d476c84fc403176df55"
+		}
+	],
+	"modifications": "Resized from the originals listed in sources; the originals are not shipped. Regenerate with scripts/openmettle/render_assets.py.",
+	"outputs": [
+		{
+			"file": "mettle.webp",
+			"source": "assets/brand/current/openmettle-avatar-transparent.png",
+			"size": "224x224",
+			"sha256": "7e70b4fcbe89866f44a74309069bd24be190cc4c693c31bdd83aabd4149af92a"
+		}
+	],
+	"tool": "scripts/openmettle/render_assets.py, Pillow 12.3.0, Lanczos resampling"
+}

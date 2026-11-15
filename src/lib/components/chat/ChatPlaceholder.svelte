@@ -9,6 +9,7 @@
 	import { blur, fade } from 'svelte/transition';
 
 	import Suggestions from './Suggestions.svelte';
+	import OpenMettleWelcome from './OpenMettleWelcome.svelte';
 	import { sanitizeResponseContent } from '$lib/utils';
 	import {
 		resolveLocalizedModelDescription,
@@ -61,6 +62,7 @@
 
 {#key mounted}
 	<div class="m-auto w-full max-w-[58rem] px-8 lg:px-20">
+		<OpenMettleWelcome />
 		<div class="flex justify-start">
 			<div class="flex -space-x-4 mb-0.5" in:fade={{ duration: 200 }}>
 				{#each models as model, modelIdx}

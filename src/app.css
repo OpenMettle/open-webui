@@ -1219,3 +1219,55 @@ html.high-contrast:not(.dark) .shimmer {
 	outline: 2px solid rgba(59, 130, 246, 0.5);
 	outline-offset: -2px;
 }
+
+/* OpenMettle chat palette. Keep custom page backgrounds and app-wide themes intact. */
+[data-chat-theme='openmettle'] {
+	--mettle-ink: #24272c;
+	--mettle-muted: #64605a;
+	--mettle-emphasis: #b72f26;
+	--mettle-accent: #e7473c;
+	--mettle-surface: #faf7f1;
+	--mettle-border: #ded6c8;
+	background-color: #f2ebdd;
+	color: var(--mettle-ink);
+}
+
+.dark [data-chat-theme='openmettle'] {
+	--mettle-ink: #f2ebdd;
+	--mettle-muted: #bcb6ac;
+	--mettle-emphasis: #ff8378;
+	--mettle-surface: #24272c;
+	--mettle-border: #41444a;
+	background-color: #191c21;
+}
+
+[data-chat-theme='openmettle'] [data-composer-id] {
+	background-color: var(--mettle-surface);
+	border-color: var(--mettle-border);
+	box-shadow: 0 8px 28px rgb(25 28 33 / 6%);
+}
+
+[data-chat-theme='openmettle'] [data-composer-id]:focus-within {
+	border-color: var(--mettle-accent);
+	box-shadow:
+		0 0 0 3px rgb(231 71 60 / 12%),
+		0 8px 28px rgb(25 28 33 / 6%);
+}
+
+[data-chat-theme='openmettle'] button[id$='send-message-button']:not(:disabled) {
+	background-color: var(--mettle-accent);
+	color: #191c21;
+}
+
+[data-chat-theme='openmettle'] button[id$='send-message-button']:not(:disabled):hover {
+	background-color: #ff8378;
+}
+
+[data-chat-theme='openmettle'] button:focus-visible {
+	outline: 2px solid var(--mettle-emphasis);
+	outline-offset: 3px;
+}
+
+[data-chat-theme='openmettle'] [role='listitem'] > button:hover {
+	background-color: var(--mettle-surface);
+}
