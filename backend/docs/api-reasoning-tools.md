@@ -42,12 +42,17 @@ There are two history paths:
 
 Structured reasoning stays separate from assistant `content`. Existing controlled
 UI reasoning rendering remains available. It must not be copied into answer text,
-summaries or client exports. Payload debug logs record counts. Chat inference audit
-bodies redact structured reasoning fields, aliases and reasoning output items;
-incomplete or non-JSON bodies receive a redaction marker. Audit events, request
+summaries or client exports. Payload debug logs record counts. Every audited request
+and response body redacts structured reasoning fields, aliases, reasoning output
+items, and `reasoning_text`/`reasoning_summary_text` content parts. This includes
+task completions, Ollama generate, chat-completed and Responses routes. Incomplete
+or non-JSON bodies receive a redaction marker. Audit events, request
 metadata, response status and usage counters remain available. This does not
 sanitize arbitrary reasoning embedded by a provider in ordinary text or error
 messages, or configure third-party filters and telemetry.
+
+Redaction also omits reasoning configuration objects and bodies truncated by the
+audit size limit. This favors privacy over body detail; the event metadata remains.
 
 ## Tool ownership
 
