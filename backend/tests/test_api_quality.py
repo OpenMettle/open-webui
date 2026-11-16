@@ -237,7 +237,13 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(PRIVATE, audit.redact_chat_reasoning('{"reasoning_content":"' + PRIVATE))
         self.assertNotIn(PRIVATE, audit.redact_chat_reasoning('data: {"reasoning_content":"' + PRIVATE))
         self.assertNotIn(PRIVATE, audit.redact_chat_reasoning('  data: ' + json.dumps({'reasoning_content': PRIVATE})))
-        self.assertNotIn(PRIVATE, audit.redact_chat_reasoning('[' * 600 + json.dumps(PRIVATE) + ']' * 600))
+        nested_reasoning = '[' * 600 + json.dumps({'reasoning_content': PRIVATE}) + ']' * 600
+        self.assertNotIn(PRIVATE, audit.redact_chat_reasoning(nested_reasoning))
+        with patch.object(audit.JSONCodec, 'loads', side_effect=RecursionError):
+            self.assertEqual(
+                audit.redact_chat_reasoning(json.dumps({'reasoning_content': PRIVATE})),
+                '[redacted: incomplete or non-JSON chat audit body]',
+            )
         user = SimpleNamespace(model_dump=lambda **kwargs: {'id': 'fixture-user'})
         with patch.object(audit, 'AuditLogger', return_value=logger):
             audit.log_model_usage(
