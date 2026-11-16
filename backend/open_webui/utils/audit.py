@@ -169,7 +169,8 @@ def redact_chat_reasoning(body: str) -> str:
             return value
         item_type = value.get('type', '')
         if isinstance(item_type, str) and (
-            item_type in {'reasoning', 'thinking', 'redacted_thinking'} or item_type.startswith('response.reasoning')
+            item_type in {'reasoning', 'thinking', 'redacted_thinking', 'reasoning_text', 'reasoning_summary_text'}
+            or item_type.startswith('response.reasoning')
         ):
             return {'type': item_type, 'redacted': True}
         return {
@@ -370,10 +371,10 @@ class AuditLoggingMiddleware:
             request_body = context.request_body.decode('utf-8', errors='replace')
             response_body = context.response_body.decode('utf-8', errors='replace')
 
-            # Redact sensitive information
-            if request.url.path.rstrip('/').endswith(('/chat/completions', '/responses', '/api/chat')):
-                request_body = redact_chat_reasoning(request_body)
-                response_body = redact_chat_reasoning(response_body)
+            # Reasoning can appear in task, completion and provider-specific routes.
+            # Apply the same body boundary regardless of which route was audited.
+            request_body = redact_chat_reasoning(request_body)
+            response_body = redact_chat_reasoning(response_body)
             request_body = redact_secrets(request_body)
             response_body = redact_secrets(response_body)
 

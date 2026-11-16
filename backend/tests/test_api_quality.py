@@ -256,6 +256,80 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(usage_entry.usage, {'input_tokens': 2, 'output_tokens': 3, 'total_tokens': 5})
         self.assertNotIn(PRIVATE, str(usage_entry))
 
+    async def test_audit_redacts_nested_responses_reasoning_parts(self):
+        audit = importlib.import_module('open_webui.utils.audit')
+        for kind in ('reasoning_text', 'reasoning_summary_text'):
+            for event in ('response.content_part.added', 'response.content_part.done'):
+                payload = {
+                    'type': event,
+                    'part': {'type': kind, 'text': PRIVATE, 'nested': {'text': PRIVATE}},
+                    'public': 'retained-public-metadata',
+                }
+                for body in (json.dumps(payload), 'data: ' + json.dumps(payload) + '\n\ndata: [DONE]\n\n'):
+                    with self.subTest(kind=kind, event=event, body_type='SSE' if body.startswith('data:') else 'JSON'):
+                        result = audit.redact_chat_reasoning(body)
+                        self.assertNotIn(PRIVATE, result)
+                        self.assertIn('retained-public-metadata', result)
+                        self.assertIn(kind, result)
+
+    async def test_every_audited_route_redacts_private_reasoning(self):
+        audit = importlib.import_module('open_webui.utils.audit')
+        for path in (
+            '/api/v1/tasks/title/completions',
+            '/ollama/api/generate',
+            '/api/chat/completed',
+            '/openai/responses',
+            '/openai/chat/completions',
+            '/api/v1/unrelated',
+        ):
+            with self.subTest(path=path):
+                request = Request(
+                    {
+                        'type': 'http',
+                        'method': 'POST',
+                        'path': path,
+                        'scheme': 'http',
+                        'server': ('fixture.invalid', 80),
+                        'headers': [],
+                        'query_string': b'',
+                        'state': {'audit_request_id': 'fixture-request'},
+                    }
+                )
+                logger = Mock()
+                auditor = audit.AuditLoggingMiddleware(AsyncMock(), audit_level=audit.AuditLevel.REQUEST_RESPONSE)
+                auditor.audit_logger = logger
+                auditor._get_authenticated_user = AsyncMock(return_value=None)
+                context = audit.AuditContext()
+                context.metadata['response_status_code'] = 200
+                context.add_request_chunk(
+                    json.dumps(
+                        {
+                            'model': 'opaque-fixture',
+                            'messages': [{'reasoning_content': PRIVATE}],
+                            'password': 'synthetic-secret',
+                        }
+                    ).encode()
+                )
+                context.add_response_chunk(
+                    json.dumps(
+                        {
+                            'thinking': PRIVATE,
+                            'reasoning_details': [{'text': PRIVATE}],
+                            'output': [{'type': 'reasoning_summary_text', 'text': PRIVATE}],
+                            'content': 'public answer',
+                        }
+                    ).encode()
+                )
+                await auditor._log_audit_entry(request, context)
+                logger.write.assert_called_once()
+                entry = logger.write.call_args.args[0]
+                self.assertNotIn(PRIVATE, str(entry))
+                self.assertNotIn('synthetic-secret', str(entry))
+                self.assertIn('opaque-fixture', entry.request_object)
+                self.assertIn('public answer', entry.response_object)
+                self.assertEqual(entry.response_status_code, 200)
+                self.assertEqual(entry.request_uri, 'http://fixture.invalid' + path)
+
     async def test_caller_two_rounds_return_raw_reasoning_and_finish_reason(self):
         history = [{'role': 'user', 'content': 'fixture'}]
         execute = self.patch('execute_tool_call', AsyncMock(side_effect=AssertionError('caller tool executed')))
