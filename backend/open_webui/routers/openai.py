@@ -42,7 +42,11 @@ from open_webui.utils.access_control import check_model_access, has_connection_a
 from open_webui.utils.anthropic import ANTHROPIC_VERSION, get_anthropic_models, is_anthropic_url
 from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.headers import get_headers_and_cookies, include_user_info_headers
-from open_webui.utils.gateway_refusals import model_unavailable_message, record_model_list_response
+from open_webui.utils.gateway_refusals import (
+    model_unavailable_message,
+    record_gateway_response,
+    refused_chat_response,
+)
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.misc import convert_logit_bias_input_to_json, get_provider_function, merge_tool_call_batches
 from open_webui.utils.model_ids import strip_provider_model_prefix
@@ -110,7 +114,7 @@ async def send_get_request(
                 ssl=AIOHTTP_CLIENT_SESSION_SSL,
             ) as response:
                 body = await response.json(loads=JSONCodec.loads)
-                record_model_list_response(user, response.status, body)
+                record_gateway_response(user, url, response.status, body)
                 return body
     except Exception as e:
         # Handle connection error here
@@ -1613,6 +1617,9 @@ async def generate_chat_completion(
                 )
                 try:
                     error_json = JSONCodec.loads(error_body)
+                    refused = refused_chat_response(user, url, r.status, error_json)
+                    if refused is not None:
+                        return JSONResponse(status_code=403, content=refused)
                     await publish_model_provider_request_failed(
                         request,
                         actor=user,
@@ -1655,6 +1662,9 @@ async def generate_chat_completion(
                 response = await r.text()
 
             if r.status >= 400:
+                refused = refused_chat_response(user, url, r.status, response)
+                if refused is not None:
+                    return JSONResponse(status_code=403, content=refused)
                 retry_headers = {k: v for k, v in r.headers.items() if k.lower() in ('retry-after', 'retry-after-ms')}
                 await publish_model_provider_request_failed(
                     request,

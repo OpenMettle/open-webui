@@ -1157,7 +1157,7 @@ async def chat_completion(
         missing_base_model = False
         if not model_item.get('direct', False):
             if agent_model is None and model_id not in request.app.state.MODELS:
-                raise Exception(model_unavailable_message(user, 'Model not found'))
+                raise Exception(model_unavailable_message(user, ERROR_MESSAGES.MODEL_NOT_FOUND(model_id or '')))
 
             model = agent_model or request.app.state.MODELS[model_id]
             model_info = await Models.get_model_by_id(model_id)
@@ -1221,7 +1221,7 @@ async def chat_completion(
         # Check base model existence for custom models
         if missing_base_model:
             if fallback_model is None:
-                raise Exception('Model not found')
+                raise Exception(ERROR_MESSAGES.MODEL_NOT_FOUND(model_id or ''))
             # Update model and form_data so routing uses the fallback model's type
             model = fallback_model
             form_data['model'] = fallback_model['id']
