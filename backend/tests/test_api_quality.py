@@ -242,7 +242,7 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(audit.JSONCodec, 'loads', side_effect=RecursionError):
             self.assertEqual(
                 audit.redact_chat_reasoning(json.dumps({'reasoning_content': PRIVATE})),
-                '[redacted: incomplete or non-JSON chat audit body]',
+                '[redacted: incomplete or non-JSON audit body]',
             )
         user = SimpleNamespace(model_dump=lambda **kwargs: {'id': 'fixture-user'})
         with patch.object(audit, 'AuditLogger', return_value=logger):
@@ -329,6 +329,57 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn('public answer', entry.response_object)
                 self.assertEqual(entry.response_status_code, 200)
                 self.assertEqual(entry.request_uri, 'http://fixture.invalid' + path)
+
+    async def test_audit_preserves_unrelated_bodies_without_exposing_reasoning(self):
+        audit = importlib.import_module('open_webui.utils.audit')
+        code = json.dumps({'password': 'synthetic-secret', 'content': 'recorded-code-header\n' + 'x' * 3000})
+        multipart = '--fixture\r\nContent-Disposition: form-data; name="file"\r\n\r\nrecorded-upload\r\n--fixture--'
+        unicode_body = '{"name": "José 日本", "enabled": true}'
+        cases = [
+            ('/api/v1/tools/create', code, 'recorded-code-header', False),
+            ('/api/v1/functions/create', code, 'recorded-code-header', False),
+            ('/api/v1/files/', multipart, multipart, False),
+            ('/api/v1/tools/create', unicode_body, unicode_body, False),
+            ('/api/v1/unrelated', '{"reasoning_content":"' + PRIVATE + 'x' * 3000, None, True),
+            ('/api/v1/unrelated', '{"reasoning_content":"' + PRIVATE + '"}', None, True),
+            ('/api/v1/unrelated', '{"\\u0072easoning_content":"' + PRIVATE + '"}', None, True),
+            # A Responses item can put its text before the type, beyond the capture limit.
+            ('/openai/responses', '{"part":{"text":"' + PRIVATE + 'x' * 3000, None, True),
+            ('/api/v1/tasks/title/completions', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
+            ('/ollama/api/generate', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
+            ('/api/chat/completed', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
+        ]
+        for level in (audit.AuditLevel.REQUEST, audit.AuditLevel.REQUEST_RESPONSE):
+            for path, body, retained, private in cases:
+                with self.subTest(level=level, path=path, body=body[:40]):
+                    request = Request(
+                        {
+                            'type': 'http',
+                            'method': 'POST',
+                            'path': path,
+                            'scheme': 'http',
+                            'server': ('fixture.invalid', 80),
+                            'headers': [],
+                            'query_string': b'',
+                            'state': {'audit_request_id': 'fixture-request'},
+                        }
+                    )
+                    auditor = audit.AuditLoggingMiddleware(AsyncMock(), audit_level=level)
+                    auditor.audit_logger = Mock()
+                    auditor._get_authenticated_user = AsyncMock(return_value=None)
+                    context = audit.AuditContext(max_body_size=2048)
+                    context.add_request_chunk(body.encode())
+                    context.add_response_chunk(body.encode())
+                    await auditor._log_audit_entry(request, context)
+                    entry = auditor.audit_logger.write.call_args.args[0]
+                    for observed in (entry.request_object, entry.response_object):
+                        self.assertNotIn('synthetic-secret', observed)
+                        if private:
+                            self.assertNotIn(PRIVATE, observed)
+                            self.assertIn('redacted', observed)
+                        else:
+                            self.assertIn(retained, observed)
+                            self.assertEqual(observed, audit.redact_secrets(context.request_body.decode()))
 
     async def test_caller_two_rounds_return_raw_reasoning_and_finish_reason(self):
         history = [{'role': 'user', 'content': 'fixture'}]

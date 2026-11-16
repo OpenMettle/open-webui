@@ -153,13 +153,17 @@ def redact_secrets(body: str) -> str:
     )
 
 
-def redact_chat_reasoning(body: str) -> str:
+def redact_chat_reasoning(body: str, *, inference: bool = True) -> str:
     """Remove private reasoning from JSON or SSE audit bodies, including aliases.
 
-    A truncated body cannot be safely decoded. Keep the audit event and its
-    metadata, but omit that body rather than recording partial private text.
+    Preserve unmarked, unrelated bodies verbatim. Inference bodies and bodies
+    with possible reasoning fields must decode safely before they are logged.
     """
     if not body:
+        return body
+    # Escaped JSON keys must be decoded too. Inference bodies cannot use this
+    # shortcut: a truncated Responses item can put its text before its type.
+    if not inference and not re.search(r'reason|think|\\u', body, flags=re.IGNORECASE):
         return body
 
     def redact(value):
@@ -191,7 +195,7 @@ def redact_chat_reasoning(body: str) -> str:
             return '\n'.join(lines)
         return JSONCodec.dumps(redact(JSONCodec.loads(body)))
     except (ValueError, TypeError, RecursionError):
-        return '[redacted: incomplete or non-JSON chat audit body]'
+        return '[redacted: incomplete or non-JSON audit body]'
 
 
 class AuditLoggingMiddleware:
@@ -371,10 +375,14 @@ class AuditLoggingMiddleware:
             request_body = context.request_body.decode('utf-8', errors='replace')
             response_body = context.response_body.decode('utf-8', errors='replace')
 
-            # Reasoning can appear in task, completion and provider-specific routes.
-            # Apply the same body boundary regardless of which route was audited.
-            request_body = redact_chat_reasoning(request_body)
-            response_body = redact_chat_reasoning(response_body)
+            # Keep inference routes fail-closed even if truncation hid a type/key.
+            # Other routes retain unmarked forensic detail and existing secret redaction.
+            path = request.url.path.rstrip('/').lower()
+            inference = path.startswith('/api/v1/tasks/') or path.endswith(
+                ('/completions', '/responses', '/api/chat', '/api/generate', '/chat/completed')
+            )
+            request_body = redact_chat_reasoning(request_body, inference=inference)
+            response_body = redact_chat_reasoning(response_body, inference=inference)
             request_body = redact_secrets(request_body)
             response_body = redact_secrets(response_body)
 
