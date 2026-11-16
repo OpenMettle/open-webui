@@ -42,6 +42,7 @@ from open_webui.utils.access_control import check_model_access, has_connection_a
 from open_webui.utils.anthropic import ANTHROPIC_VERSION, get_anthropic_models, is_anthropic_url
 from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.headers import get_headers_and_cookies, include_user_info_headers
+from open_webui.utils.gateway_refusals import model_unavailable_message, record_model_list_response
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.misc import convert_logit_bias_input_to_json, get_provider_function, merge_tool_call_batches
 from open_webui.utils.model_ids import strip_provider_model_prefix
@@ -108,7 +109,9 @@ async def send_get_request(
                 cookies=cookies,
                 ssl=AIOHTTP_CLIENT_SESSION_SSL,
             ) as response:
-                return await response.json(loads=JSONCodec.loads)
+                body = await response.json(loads=JSONCodec.loads)
+                record_model_list_response(user, response.status, body)
+                return body
     except Exception as e:
         # Handle connection error here
         log.error(f'Connection error: {e}')
@@ -384,7 +387,10 @@ async def get_anthropic_request_target(request: Request, form_data: dict, user: 
 
     model = models.get(model_id)
     if not model or 'urlIdx' not in model:
-        raise HTTPException(status_code=404, detail=ERROR_MESSAGES.MODEL_NOT_FOUND())
+        raise HTTPException(
+            status_code=404,
+            detail=model_unavailable_message(user, ERROR_MESSAGES.MODEL_NOT_FOUND(model_id or '')),
+        )
 
     url, key, api_config = await get_openai_connection(model['urlIdx'])
     prefix_id = api_config.get('prefix_id')
@@ -1467,7 +1473,7 @@ async def generate_chat_completion(
     else:
         raise HTTPException(
             status_code=404,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=model_unavailable_message(user, ERROR_MESSAGES.MODEL_NOT_FOUND(model_id or '')),
         )
 
     url, key, api_config = await get_openai_connection(idx)

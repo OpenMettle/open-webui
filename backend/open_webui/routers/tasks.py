@@ -19,6 +19,7 @@ from open_webui.config import (
 from open_webui.constants import ERROR_MESSAGES, TASKS
 from open_webui.models.config import Config
 from open_webui.routers.pipelines import process_pipeline_inlet_filter
+from open_webui.utils.gateway_refusals import refusal_code
 from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.chat import generate_chat_completion
 from open_webui.utils.payload import apply_params_to_form_data
@@ -161,9 +162,15 @@ async def generate_title(request: Request, form_data: dict, user=Depends(get_ver
             detail='No model specified for title generation. Please ensure a model is selected for this chat.',
         )
     if model_id not in models and not model_id.startswith('agent:'):
+        if refusal_code(user) is not None:
+            # An account the gateway refused has no models: no title, and no error toast.
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={'detail': 'Title generation is unavailable for this account'},
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -233,7 +240,7 @@ async def generate_follow_ups(request: Request, form_data: dict, user=Depends(ge
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -300,7 +307,7 @@ async def generate_chat_tags(request: Request, form_data: dict, user=Depends(get
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -359,7 +366,7 @@ async def generate_image_prompt(request: Request, form_data: dict, user=Depends(
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -436,7 +443,7 @@ async def generate_queries(request: Request, form_data: dict, user=Depends(get_v
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -512,7 +519,7 @@ async def generate_autocompletion(request: Request, form_data: dict, user=Depend
     if model_id not in models and not model_id.startswith('agent:'):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, task_model_params = await get_task_model_generation_config(model_id, models)
@@ -573,7 +580,7 @@ async def generate_emoji(request: Request, form_data: dict, user=Depends(get_ver
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     task_model_id, _ = await get_task_model_generation_config(model_id, models)
@@ -628,7 +635,7 @@ async def generate_moa_response(request: Request, form_data: dict, user=Depends(
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(),
+            detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_id),
         )
 
     template = DEFAULT_MOA_GENERATION_PROMPT_TEMPLATE

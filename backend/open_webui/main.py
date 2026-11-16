@@ -221,6 +221,7 @@ from open_webui.tasks import (
 from open_webui.utils import logger
 from open_webui.utils.access_control import has_permission, requires_web_search_confirmation
 from open_webui.utils.access_control.folders import has_folder_write_access
+from open_webui.utils.gateway_refusals import model_unavailable_message
 from open_webui.utils.actions import chat_action as chat_action_handler
 from open_webui.utils.asgi_middleware import AppHTTPMiddleware, BrowserCORSMiddleware
 from open_webui.utils.audit import AuditLevel, AuditLoggingMiddleware
@@ -1156,7 +1157,7 @@ async def chat_completion(
         missing_base_model = False
         if not model_item.get('direct', False):
             if agent_model is None and model_id not in request.app.state.MODELS:
-                raise Exception('Model not found')
+                raise Exception(model_unavailable_message(user, 'Model not found'))
 
             model = agent_model or request.app.state.MODELS[model_id]
             model_info = await Models.get_model_by_id(model_id)
