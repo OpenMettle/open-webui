@@ -47,9 +47,13 @@ and response body redacts structured reasoning fields, aliases, reasoning output
 items, and `reasoning_text`/`reasoning_summary_text` content parts. This includes
 task completions, Ollama generate, chat-completed and Responses routes. Inference
 bodies that cannot be decoded receive a redaction marker, including truncated
-Responses items whose text appears before their type. On other routes, bodies
-without `reason`, `think` or a JSON Unicode escape retain their captured text
-without reserialization. Bodies with these markers use decode-or-omit redaction.
+Responses items whose text appears before their type. Only POST requests to
+`/api/v1/files`, or to `create`, `id/{id}/update` and `id/{id}/update/version`
+under `/api/v1/tools` and `/api/v1/functions`, retain captured bodies without
+reserialization when the bodies contain no `reason`, `think` or JSON Unicode
+escape. Bodies with these markers use decode-or-omit redaction. All other routes
+use strict decoding, including indexed provider routes, proxy subpaths and tool
+MCP calls.
 Existing secret redaction still applies to every body. Audit events, request
 metadata, response status and usage counters remain available. This does not
 sanitize arbitrary reasoning embedded by a provider in ordinary text or error
@@ -58,8 +62,8 @@ messages, or configure third-party filters and telemetry.
 Redaction also omits reasoning configuration objects. Truncation on inference
 routes or in a body with a possible reasoning marker removes body detail; the
 event metadata remains. Unmarked tool/function code and multipart uploads keep
-their existing size-limited audit detail. New inference routes must be included
-in the inference-route check even when they use a different payload format.
+their existing size-limited audit detail. New routes use strict decoding by
+default. Keep the exception limited to these code and file upload endpoints.
 
 ## Tool ownership
 
