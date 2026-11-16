@@ -744,7 +744,8 @@ async def get_all_models(request: Request, user: UserModel) -> dict[str, list]:
                         continue
 
                     if model_id and model_id not in models:
-                        provider = model.get('provider', '')
+                        # Replay support is a connection setting, not an upstream catalogue claim.
+                        provider = api_config.get('provider', '')
                         merged = {
                             **model,
                             'name': model.get('name', model_id),

@@ -212,7 +212,7 @@ async def generate_chat_completion(
     bypass_filter: bool = False,
     bypass_system_prompt: bool = False,
 ):
-    log.debug('generate_chat_completion: %s', form_data)
+    log.debug('Generating chat completion: message_count=%d', len(form_data.get('messages', [])))
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
 

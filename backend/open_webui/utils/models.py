@@ -22,6 +22,7 @@ from open_webui.socket.utils import RedisDict
 from open_webui.utils.access_control import has_access, has_base_model_access
 from open_webui.utils.chat_variables import get_chat_variables_schema
 from open_webui.utils.json_codec import JSONCodec
+from open_webui.utils.model_capabilities import get_reasoning_format
 from open_webui.utils.plugin import (
     get_function_module_from_cache,
     get_functions_cache,
@@ -439,6 +440,9 @@ async def get_all_models(request, refresh: bool = False, user: UserModel = None)
     default_threshold = (config.get('models.default_params') or {}).get('compact_token_threshold')
 
     for model in models:
+        # Derive this declaration from the effective connection, including presets.
+        # Do not trust capability claims supplied by an upstream model catalogue.
+        model['provider_capabilities'] = {'reasoning_replay': get_reasoning_format(model)}
         if default_threshold is not None:
             info = model.get('info') or {}
             model['info'] = {
