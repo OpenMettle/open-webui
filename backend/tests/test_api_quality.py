@@ -332,6 +332,8 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_audit_preserves_unrelated_bodies_without_exposing_reasoning(self):
         audit = importlib.import_module('open_webui.utils.audit')
+        private_text = 'synthetic-confidential-payload'
+        self.assertNotRegex(private_text, r'(?i)reason|think|\\u')
         code = json.dumps({'password': 'synthetic-secret', 'content': 'recorded-code-header\n' + 'x' * 3000})
         multipart = '--fixture\r\nContent-Disposition: form-data; name="file"\r\n\r\nrecorded-upload\r\n--fixture--'
         unicode_body = '{"name": "José 日本", "enabled": true}'
@@ -340,15 +342,40 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
             ('/api/v1/functions/create', code, 'recorded-code-header', False),
             ('/api/v1/files/', multipart, multipart, False),
             ('/api/v1/tools/create', unicode_body, unicode_body, False),
-            ('/api/v1/unrelated', '{"reasoning_content":"' + PRIVATE + 'x' * 3000, None, True),
-            ('/api/v1/unrelated', '{"reasoning_content":"' + PRIVATE + '"}', None, True),
-            ('/api/v1/unrelated', '{"\\u0072easoning_content":"' + PRIVATE + '"}', None, True),
+            ('/api/v1/tools/id/fixture/update', code, 'recorded-code-header', False),
+            ('/api/v1/functions/id/fixture/update/version', code, 'recorded-code-header', False),
+            ('/api/v1/tools/create', '{"reasoning_content":"' + private_text + 'x' * 3000, None, True),
+            ('/api/v1/functions/create', '{"\\u0072easoning_content":"' + private_text + '"}', None, True),
+            ('/api/v1/unrelated', '{"reasoning_content":"' + private_text + 'x' * 3000, None, True),
+            ('/api/v1/unrelated', '{"reasoning_content":"' + private_text + '"}', None, True),
+            ('/api/v1/unrelated', '{"\\u0072easoning_content":"' + private_text + '"}', None, True),
             # A Responses item can put its text before the type, beyond the capture limit.
-            ('/openai/responses', '{"part":{"text":"' + PRIVATE + 'x' * 3000, None, True),
-            ('/api/v1/tasks/title/completions', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
-            ('/ollama/api/generate', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
-            ('/api/chat/completed', '{"text":"' + PRIVATE + 'x' * 3000, None, True),
+            ('/openai/responses', '{"part":{"text":"' + private_text + 'x' * 3000, None, True),
+            ('/api/v1/tasks/title/completions', '{"text":"' + private_text + 'x' * 3000, None, True),
+            ('/ollama/api/generate', '{"text":"' + private_text + 'x' * 3000, None, True),
+            ('/api/chat/completed', '{"text":"' + private_text + 'x' * 3000, None, True),
         ]
+        # Private text precedes its type beyond the capture limit. No marker can
+        # activate the body-based guard; these cases must exercise route handling.
+        for path in (
+            '/ollama/api/chat/0',
+            '/ollama/api/generate/0',
+            '/ollama/v1/chat/completions/0',
+            '/ollama/v1/responses/0',
+            '/api/v1/messages',
+            '/api/messages',
+            '/api/message',
+            '/ollama/v1/messages/0',
+            '/openai/responses/subpath',
+            '/api/v1/unknown',
+            '/api/v1/tools/id/fixture/mcp/app/rpc',
+            '/api/v1/functions/future-endpoint',
+            '/api/v1/files/future-endpoint',
+            '/api/v1/tools-proxy/responses/0',
+            '/api/v1/files-proxy/responses/0',
+            '/api/v1/functions-proxy/responses/0',
+        ):
+            cases.append((path, '{"part":{"text":"' + private_text + 'x' * 3000, None, True))
         for level in (audit.AuditLevel.REQUEST, audit.AuditLevel.REQUEST_RESPONSE):
             for path, body, retained, private in cases:
                 with self.subTest(level=level, path=path, body=body[:40]):
@@ -375,7 +402,7 @@ class ApiQualityTests(unittest.IsolatedAsyncioTestCase):
                     for observed in (entry.request_object, entry.response_object):
                         self.assertNotIn('synthetic-secret', observed)
                         if private:
-                            self.assertNotIn(PRIVATE, observed)
+                            self.assertNotIn(private_text, observed)
                             self.assertIn('redacted', observed)
                         else:
                             self.assertIn(retained, observed)

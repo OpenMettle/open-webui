@@ -375,11 +375,13 @@ class AuditLoggingMiddleware:
             request_body = context.request_body.decode('utf-8', errors='replace')
             response_body = context.response_body.decode('utf-8', errors='replace')
 
-            # Keep inference routes fail-closed even if truncation hid a type/key.
-            # Other routes retain unmarked forensic detail and existing secret redaction.
+            # Default to strict decoding: indexed, proxied and future inference
+            # routes can place private text before a type/key beyond truncation.
+            # Only known code/file upload endpoints retain unmarked forensic detail.
             path = request.url.path.rstrip('/').lower()
-            inference = path.startswith('/api/v1/tasks/') or path.endswith(
-                ('/completions', '/responses', '/api/chat', '/api/generate', '/chat/completed')
+            inference = not (
+                request.method == 'POST'
+                and re.fullmatch(r'/api/v1/(?:files|(?:tools|functions)/(?:create|id/[^/]+/update(?:/version)?))', path)
             )
             request_body = redact_chat_reasoning(request_body, inference=inference)
             response_body = redact_chat_reasoning(response_body, inference=inference)
