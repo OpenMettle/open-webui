@@ -41,3 +41,24 @@ jobs:
 
       - name: Detect logic errors
         run: ruff check --select=F --ignore=F401,F403,F405,F541,F811,F841 --output-format=github .
+
+      - name: Install offline API test dependencies
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+          import tomllib
+
+          names = {
+              'fastapi', 'pydantic', 'aiohttp', 'aiofiles', 'aiocache',
+              'python-mimeparse', 'python-socketio', 'regex', 'asgiref', 'loguru',
+          }
+          with open('pyproject.toml', 'rb') as source:
+              dependencies = tomllib.load(source)['project']['dependencies']
+          selected = [item for item in dependencies if item.split('==')[0] in names]
+          assert len(selected) == len(names)
+          subprocess.check_call([sys.executable, '-m', 'pip', 'install', *selected])
+          PY
+
+      - name: Offline API contract regressions
+        run: python -m unittest discover -s backend/tests -p 'test_api_quality.py' -v

@@ -27,6 +27,7 @@ from loguru import logger
 from open_webui.env import AUDIT_INCLUDED_PATHS, AUDIT_LOG_LEVEL, ENABLE_AUDIT_GET_REQUESTS, MAX_BODY_LOG_SIZE
 from open_webui.models.users import UserModel
 from open_webui.utils.auth import get_current_user, get_http_authorization_cred
+from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.response import normalize_usage
 from starlette.requests import Request
 
@@ -150,6 +151,46 @@ def redact_secrets(body: str) -> str:
         body,
         flags=re.IGNORECASE,
     )
+
+
+def redact_chat_reasoning(body: str) -> str:
+    """Remove private reasoning from JSON or SSE audit bodies, including aliases.
+
+    A truncated body cannot be safely decoded. Keep the audit event and its
+    metadata, but omit that body rather than recording partial private text.
+    """
+    if not body:
+        return body
+
+    def redact(value):
+        if isinstance(value, list):
+            return [redact(item) for item in value]
+        if not isinstance(value, dict):
+            return value
+        item_type = value.get('type', '')
+        if isinstance(item_type, str) and (
+            item_type in {'reasoning', 'thinking', 'redacted_thinking'} or item_type.startswith('response.reasoning')
+        ):
+            return {'type': item_type, 'redacted': True}
+        return {
+            key: '[redacted]'
+            if key in {'reasoning_content', 'reasoning', 'thinking', 'reasoning_details'}
+            else redact(item)
+            for key, item in value.items()
+        }
+
+    try:
+        if body.lstrip().startswith(('data:', 'event:')):
+            lines = []
+            for line in body.splitlines():
+                stripped = line.lstrip()
+                if stripped.startswith('data:') and stripped[5:].strip() != '[DONE]':
+                    line = 'data: ' + JSONCodec.dumps(redact(JSONCodec.loads(stripped[5:].strip())))
+                lines.append(line)
+            return '\n'.join(lines)
+        return JSONCodec.dumps(redact(JSONCodec.loads(body)))
+    except (ValueError, TypeError, RecursionError):
+        return '[redacted: incomplete or non-JSON chat audit body]'
 
 
 class AuditLoggingMiddleware:
@@ -330,6 +371,9 @@ class AuditLoggingMiddleware:
             response_body = context.response_body.decode('utf-8', errors='replace')
 
             # Redact sensitive information
+            if request.url.path.rstrip('/').endswith(('/chat/completions', '/responses', '/api/chat')):
+                request_body = redact_chat_reasoning(request_body)
+                response_body = redact_chat_reasoning(response_body)
             request_body = redact_secrets(request_body)
             response_body = redact_secrets(response_body)
 

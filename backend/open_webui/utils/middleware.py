@@ -126,6 +126,7 @@ from open_webui.utils.misc import (
     set_last_user_message_content,
     strip_empty_content_blocks,
 )
+from open_webui.utils.model_capabilities import get_reasoning_format
 from open_webui.utils.oauth import get_system_oauth_token
 from open_webui.utils.payload import apply_params_to_form_data, apply_system_prompt_to_body
 from open_webui.utils.plugin import load_function_module_by_id
@@ -1883,24 +1884,6 @@ async def load_messages_from_db(chat_id: str, message_id: str) -> Optional[list[
     ]
 
 
-def get_reasoning_format(model: dict) -> str | None:
-    """
-    Determine how reasoning should be included in reconstructed messages.
-
-    Returns:
-        'thinking': Ollama expects reasoning in the native thinking field.
-        'think_tags': wrap reasoning in <think> tags inside content.
-        'reasoning_content': llama.cpp supports reasoning_content as a top-level field.
-        None: skip reasoning (safe default for strict providers).
-    """
-    provider = model.get('provider', '')
-    if model.get('owned_by') == 'ollama':
-        return 'thinking'
-    if provider == 'llama.cpp':
-        return 'reasoning_content'
-    return None
-
-
 def strip_reasoning_details(output: list) -> list:
     return [
         {key: value for key, value in item.items() if key != 'reasoning_details'} if isinstance(item, dict) else item
@@ -2054,8 +2037,10 @@ async def process_chat_payload(request, form_data, user, metadata, model):
             metadata['selected_model_id'] = selected_model_id
 
     payload_tools = form_data.get('tools', None)  # snapshot before filters
+    # Ownership comes from the caller's request, never from injected tool schemas.
+    metadata['caller_owned_tools'] = payload_tools is not None
     form_data = apply_params_to_form_data(form_data, model)
-    log.debug('form_data: %s', form_data)
+    log.debug('Preparing chat payload: message_count=%d', len(form_data.get('messages', [])))
 
     # Guided regeneration: extract before it reaches the LLM provider
     regeneration_prompt = form_data.pop('regeneration_prompt', None)
@@ -2100,7 +2085,9 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                     db_messages.append(assistant_message)
                     output = assistant_message.get('output')
                     output = output if isinstance(output, list) else []
-                    if metadata.get('tool_approval_resume') == 'tools' or pending_tool_calls(output):
+                    if payload_tools is None and (
+                        metadata.get('tool_approval_resume') == 'tools' or pending_tool_calls(output)
+                    ):
                         pending_assistant_message = assistant_message
 
             # Guided regeneration: show the model the reply it is asked to revise.
@@ -4769,7 +4756,8 @@ async def streaming_chat_response_handler(response, ctx):
             model_capabilities = model.get('info', {}).get('meta', {}).get('capabilities') or {}
             builtin_tools_meta = model.get('info', {}).get('meta', {}).get('builtinTools', {})
             DETECT_CODE_INTERPRETER = (
-                metadata.get('params', {}).get('function_calling') == 'legacy'
+                not metadata.get('caller_owned_tools', False)
+                and metadata.get('params', {}).get('function_calling') == 'legacy'
                 and bool(features.get('code_interpreter'))
                 and builtin_tools_meta.get('code_interpreter', True)
                 and await Config.get('code_interpreter.enable')
@@ -5852,7 +5840,7 @@ async def streaming_chat_response_handler(response, ctx):
                             }
                         )
 
-                while tool_calls:
+                while tool_calls and not metadata.get('caller_owned_tools', False):
                     round_error = stop_reason
                     if max_tool_call_iterations is not None and tool_call_iterations >= max_tool_call_iterations:
                         round_error = 'Tool-call iteration limit reached.'
